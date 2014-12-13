@@ -51,8 +51,7 @@ google.maps.event.addDomListener(window, "load", initialize);
 
             $.getJSON( "data/bus-tp-stop.json", function( data ) {
                 
-                data.features
-                .forEach(function(item){
+                data.features.forEach(function(item){
                 
                     var position = new google.maps.LatLng( 
                         item.geometry.coordinates[1], 
@@ -66,8 +65,32 @@ google.maps.event.addDomListener(window, "load", initialize);
                 });
             });
 
-        }, 3000 );
 
+            $.getJSON( "data/bus-tp-route.json", function( data ) {
+                
+                var myRoute = data.features.filter(function(s){
+                    return (s.properties.bad_chines === "645") ;
+                });
+                console.log(myRoute);
+                
+                myRoute.forEach(function(item){
+
+                    var flightPlanCoordinates = item.geometry.coordinates.map(function(point){
+                        return (new google.maps.LatLng(point[1], point[0]));
+                    });
+
+                    var flightPath = new google.maps.Polyline({
+                        path: flightPlanCoordinates,
+                        geodesic: true,
+                        strokeColor: '#FF0000',
+                        strokeOpacity: 1.0,
+                        strokeWeight: 2
+                    });
+
+                    flightPath.setMap(map);
+                });
+            });
+        }, 3000 );
     };
 
 });
