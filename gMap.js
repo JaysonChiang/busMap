@@ -1,29 +1,33 @@
 $(document).ready(function(){
 
-var go=[];
-$.getJSON( "myBus.json", function( data ) {
+
+/***for NTP
+
+$.getJSON( "data/bus-ntp-stop.json", function( data ) {
   
-  var bus113 = data.filter(function(item){
+  var busNTP = data.filter(function(item){
         return item.Route_nameZh === "812" ;
   });
 
-go = bus113.filter(function(item){
+go = busNTP.filter(function(item){
     return item.Station_goBack ==="0";
 });
 
-/*
-var back = bus113.filter(function(item){
+
+var back = busNTP.filter(function(item){
     return item.Station_goBack ==="1";
 });
-*/
-  console.log(bus113.length+","+ go.length); 
+
 });
+**/
+
+
 
 function initialize() {
     
-    var myLatLng = new google.maps.LatLng( 24, 122 ),
+    var myLatLng = new google.maps.LatLng( 25.05, 121.55 ),
         myOptions = {
-            zoom: 4,
+            zoom: 12,
             center: myLatLng,
             mapTypeId: google.maps.MapTypeId.ROADMAP
             },
@@ -37,31 +41,33 @@ function initialize() {
 
 google.maps.event.addDomListener(window, "load", initialize);
 
-function moveMarker( map) {
-    
-    //delayed so you can see it move
-    setTimeout( function(){ 
-    
-       // marker.setPosition( new google.maps.LatLng( 24, 122 ) );
-       // map.panTo( new google.maps.LatLng( 24, 122 ) );
-       
-
-    go.forEach(function(item){
-        //markers[key] = item;
-        var position = new google.maps.LatLng( item.Station_latitude, item.Station_longitude ),
-        marker = new google.maps.Marker({
-            position: position,
-            map: map,
-            title: item.Route_nameZh
-        });
-    });
-
-    
-
+    function moveMarker( map) {
         
-    }, 1500 );
+        //delayed so you can see it move
+        setTimeout( function(){ 
+        
+           // marker.setPosition( new google.maps.LatLng( 24, 122 ) );
+           // map.panTo( new google.maps.LatLng( 24, 122 ) );
 
-};
+            $.getJSON( "data/bus-tp-stop.json", function( data ) {
+                
+                data.features
+                .forEach(function(item){
+                
+                    var position = new google.maps.LatLng( 
+                        item.geometry.coordinates[1], 
+                        item.geometry.coordinates[0]
+                        ),
+                    marker = new google.maps.Marker({
+                        position: position,
+                        map: map,
+                        title: item.properties.bsm_chines
+                    });
+                });
+            });
 
+        }, 3000 );
+
+    };
 
 });
