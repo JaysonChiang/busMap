@@ -52,15 +52,20 @@ google.maps.event.addDomListener(window, "load", initialize);
     function moveMarker( map) {
         
         //delayed so you can see it move
-       
+        setTimeout( function(){ 
         
            // marker.setPosition( new google.maps.LatLng( 24, 122 ) );
            // map.panTo( new google.maps.LatLng( 24, 122 ) );
 
-            $.getJSON("./bus-stop.php", function( data ) {
+/*
+            $.getJSON( "data/bus-tp-stop.json", function( data ) {
                 
-                data
-                .forEach(function(item){
+               
+                var myStation = data.features.filter(function(s){
+                    return s.properties.bsm_chines === "";     
+                });
+
+                data.features.forEach(function(item){
                 
                     var position = new google.maps.LatLng( 
                         item.geometry.coordinates[1], 
@@ -72,7 +77,9 @@ google.maps.event.addDomListener(window, "load", initialize);
                         title: item.properties.bsm_chines
                     });
                 });
+ 
             });
+*/
 /***
  ["111","1717"]
 */
@@ -80,10 +87,14 @@ google.maps.event.addDomListener(window, "load", initialize);
 // "304","304承德","304重慶","557","620","680","683",
 // "內科通勤專車13","內科通勤專車15","內科通勤專車16","小15","小15區",
 // "小16","小17","小18","小18區","小19","市民小巴1","紅30","紅5","重慶幹線"];
+var station_SL = ["111","1717","206","255","260","303","304","557","620","680","683"];
 
-            $.getJSON("./bus-route.php", function( data ) {
+            $.getJSON( "data/bus-tp-route.json", function( data ) {
 
-                data
+                var myRoute = data.features
+                .filter(function(s){
+                    return station_SL.indexOf(s.properties.bad_chines) > 0 ;
+                })
                 .forEach(function(item){
 
                     var flightPlanCoordinates = item.geometry.coordinates.map(function(point){
@@ -100,9 +111,8 @@ google.maps.event.addDomListener(window, "load", initialize);
 
                     flightPath.setMap(map);
                 });
-
             });
-
+        }, 3000 );
     };
 
 });
