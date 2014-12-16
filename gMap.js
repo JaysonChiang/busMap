@@ -83,24 +83,45 @@ google.maps.event.addDomListener(window, "load", initialize);
                 var zz = 1;
                 data
                 .forEach(function(item){
-
+                //console.log(item);
                     var flightPlanCoordinates = item.geometry.coordinates.map(function(point){
                         return (new google.maps.LatLng(point[1], point[0]));
                     });
+
+                   var flightPathShadow = new google.maps.Polyline({
+                        path: flightPlanCoordinates,
+                        strokeColor: 'black',
+                        strokeOpacity: 0,
+                        strokeWeight: 16
+                      });
+
+                    flightPathShadow.setMap(map);
 
                     var flightPath = new google.maps.Polyline({
                         path: flightPlanCoordinates,
                         geodesic: true,
                         strokeColor: getRandomColor(), //#FF0000
                         strokeOpacity: 1.0,
-                        strokeWeight: 4
+                        strokeWeight: 4,
+                        routeName: item.properties.bad_chines
                     });
-
+ 
                     flightPath.setMap(map);
 
                     google.maps.event.addListener(flightPath, 'click', function (event) {
                       this.setOptions({zIndex:zz++});
+                      console.log(this.routeName);
+                    });
+
+                    google.maps.event.addListener(flightPath, 'mouseover', function (event) {
+                      this.setOptions({strokeWeight:8});
+                      flightPathShadow.setOptions({strokeOpacity: 0.2});
                     }); 
+
+                    google.maps.event.addListener(flightPath, 'mouseout', function (event) {
+                      this.setOptions({strokeWeight:4});
+                      flightPathShadow.setOptions({strokeOpacity: 0});
+                    });  
                 });
 
             });
