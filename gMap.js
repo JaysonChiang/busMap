@@ -1,5 +1,12 @@
 $(document).ready(function(){
 
+function getParameterByName(name) {
+    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(location.search);
+    return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+}
+
 function getRandomColor() {
     var letters = '0123456789ABCDEF'.split('');
     var color = '#';
@@ -48,7 +55,7 @@ function initialize() {
 }
 
 google.maps.event.addDomListener(window, "load", initialize);
-
+var stopName = getParameterByName('name');
     function moveMarker( map) {
         
         //delayed so you can see it move
@@ -57,11 +64,11 @@ google.maps.event.addDomListener(window, "load", initialize);
            // marker.setPosition( new google.maps.LatLng( 24, 122 ) );
            // map.panTo( new google.maps.LatLng( 24, 122 ) );
 
-            $.getJSON("./bus-stop.php", function( data ) {
-                
-                data
+       //     $.getJSON("./bus-stop.php", function( data ) {
+         $.get('./bus-stop.php', {'name':stopName}, function(data) {                
+            data
                 .forEach(function(item){
-                
+            
                     var position = new google.maps.LatLng( 
                         item.geometry.coordinates[1], 
                         item.geometry.coordinates[0]
@@ -78,8 +85,30 @@ google.maps.event.addDomListener(window, "load", initialize);
 // "304","304承德","304重慶","557","620","680","683",
 // "內科通勤專車13","內科通勤專車15","內科通勤專車16","小15","小15區",
 // "小16","小17","小18","小18區","小19","市民小巴1","紅30","紅5","重慶幹線"];
+    var stopId = "55004";
+    var loadurl = "proxy.php?url=http://pda.5284.com.tw/MQS/businfo4.jsp?SLID="+stopId ;
+    var busRoutes = [];
+        $.ajax(loadurl)
+        .done(function(data){
+            var $tr = $(data).find('tr.ttego1, tr.ttego2');
 
-            $.getJSON("./bus-route.php", function( data ) {
+                $.each($tr,function(index,val){
+                    var routeName = $(val).find('td:first-child').text();
+                    busRoutes.push(routeName);
+                });
+
+                console.log(busRoutes);
+
+        })
+        .done(function(){
+            var jsonString = JSON.stringify(busRoutes);
+            $.ajax({
+                type: "POST",
+                url:"./bus-route.php",
+                data: {routes : jsonString}, 
+                cache: false
+            })
+             .done( function( data ) {
                 var zz = 1;
                 data
                 .forEach(function(item){
@@ -125,6 +154,7 @@ google.maps.event.addDomListener(window, "load", initialize);
                 });
 
             });
+        });
 
     };
 
