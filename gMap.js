@@ -63,7 +63,7 @@ var stopName = getParameterByName('name');
         
            // marker.setPosition( new google.maps.LatLng( 24, 122 ) );
            // map.panTo( new google.maps.LatLng( 24, 122 ) );
-
+var busids=[];
        //     $.getJSON("./bus-stop.php", function( data ) {
          $.get('./bus-stop.php', {'name':stopName}, function(data) {                
             data
@@ -78,8 +78,11 @@ var stopName = getParameterByName('name');
                         map: map,
                         title: item.properties.bsm_chines
                     });
+                 busids.push(item.properties.bsm_bussto);
                 });
-            });
+            }).done(function(){
+               console.log(busids);
+});
 
 // var station_SL = ["111","1717","206","255","255區","260","260區","303","303區",
 // "304","304承德","304重慶","557","620","680","683",
