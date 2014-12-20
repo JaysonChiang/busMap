@@ -61,16 +61,16 @@ var stopName = getParameterByName('name');
 function moveMarker( map) {
 
         //delayed so you can see it move
-
         
-           // marker.setPosition( new google.maps.LatLng( 24, 122 ) );
-           // map.panTo( new google.maps.LatLng( 24, 122 ) );
-           var busids=[];
-           var routesList = [];
+       // marker.setPosition( new google.maps.LatLng( 24, 122 ) );
+       // map.panTo( new google.maps.LatLng( 24, 122 ) );
+       var busids=[];
+       var routesList = [];
 
-           var myurl = "proxy.php?url=http://pda.5284.com.tw/MQS/businfo4.jsp?SLID=";
+       var myurl = "proxy.php?url=http://pda.5284.com.tw/MQS/businfo4.jsp?SLID=";
+       var count = 0;
+       $.get('./bus-stop.php', {'name':stopName}, function(data) {
 
-           $.get('./bus-stop.php', {'name':stopName}, function(data) {
             data.forEach(function(item){
 
                 var position = new google.maps.LatLng( 
@@ -87,19 +87,19 @@ function moveMarker( map) {
 
         }).done(function(){
 
-         console.log(busids);
+            console.log(busids);
 
-         var count = 0;
-         getRoutes(myurl+busids[count],count);
-
-    });
+            busids.forEach(function(id){
+                getRoutes(myurl+id);
+            });
+        });
 
     var busRoutes = [];
 
-function getRoutes(url,count){
+function getRoutes(url){
      console.log(url);
-     $.ajax(url)
-     .done(function(data){
+
+     $.ajax(url).done(function(data){
 
         var $tr = $(data).find('tr.ttego1, tr.ttego2');
 
@@ -112,10 +112,8 @@ function getRoutes(url,count){
         });
     }).done(function(){
         count++;
-        if(count != busids.length){
+        if(count === busids.length){
             console.log('getRoutes:'+ count);
-            getRoutes(myurl+busids[count],count);
-        }else{
             plotRoutes(routesList);
         }
     });
@@ -130,7 +128,7 @@ function plotRoutes (routesList){
         type: "POST",
         url:"./bus-route.php",
         data: {routes : jsonString}, 
-        cache: false
+        cache: true
     })
     .done( function( data ) {
 
