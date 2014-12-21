@@ -1,3 +1,4 @@
+ <!DOCTYPE html>
 <html>
 <head>
 	<title>my gMap</title>
@@ -5,15 +6,17 @@
 	<script src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
 	<script type="text/javascript"  src="gMap.js"></script>
 	<style type="text/css">
-		#map-canvas 
+		/*#map-canvas 
 		{ 
 			height: 600px; 
 			width: 800px;
-		}
+		}*/
 	</style>
 </head>
 <body>
+	<div id="container" style="block-inline"></div>
 	<div id="map-canvas"></div>
-        <div id="temp"></div>
+        <div>StopName:<sapn id="stopName"></span></div>
+        <div>RouteName:<sapn id="routeName"></span></div>
 </body>
 </html>

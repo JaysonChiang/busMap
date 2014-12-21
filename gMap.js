@@ -1,7 +1,18 @@
+function detectBrowser() {
+  var useragent = navigator.userAgent;
+  var mapdiv = document.getElementById('map-canvas');
 
+  if (useragent.indexOf('iPhone') != -1 || useragent.indexOf('Android') != -1 ) {
+    mapdiv.style.width = '100%';
+    mapdiv.style.height = '100%';
+  } else {
+    mapdiv.style.width = '600px';
+    mapdiv.style.height = '800px';
+  }
+}
 
 $(document).ready(function(){
-
+    detectBrowser();
 
     function getParameterByName(name) {
         name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
@@ -18,26 +29,6 @@ $(document).ready(function(){
         }
         return color;
     } 
-/***for NTP
-
-$.getJSON( "data/bus-ntp-stop.json", function( data ) {
-  
-  var busNTP = data.filter(function(item){
-        return item.Route_nameZh === "812" ;
-  });
-
-go = busNTP.filter(function(item){
-    return item.Station_goBack ==="0";
-});
-
-
-var back = busNTP.filter(function(item){
-    return item.Station_goBack ==="1";
-});
-
-});
-**/
-
 
 
 function initialize() {
@@ -58,6 +49,7 @@ function initialize() {
 
 google.maps.event.addDomListener(window, "load", initialize);
 var stopName = getParameterByName('name');
+$('#stopName').text(stopName);
 function moveMarker( map) {
 
         //delayed so you can see it move
@@ -131,10 +123,11 @@ function plotRoutes (routesList){
         cache: true
     })
     .done( function( data ) {
-
+var routeObjs = [];
+var routeObjs_s = [];
         var zz = 1;
         data
-        .forEach(function(item){
+        .forEach(function(item,idx){
                     //console.log(item);
                     var flightPlanCoordinates = item.geometry.coordinates.map(function(point){
                         return (new google.maps.LatLng(point[1], point[0]));
@@ -147,7 +140,7 @@ function plotRoutes (routesList){
                         strokeWeight: 16
                     });
 
-                    flightPathShadow.setMap(map);
+                    
 
                     var flightPath = new google.maps.Polyline({
                         path: flightPlanCoordinates,
@@ -155,25 +148,47 @@ function plotRoutes (routesList){
                             strokeColor: getRandomColor(), //#FF0000
                             strokeOpacity: 1.0,
                             strokeWeight: 4,
-                            routeName: item.properties.bad_chines
+                            routeName: item.properties.bad_chines,
+                            routeId:idx,
+                            clicked:false
+                        });
+                    flightPathShadow.setMap(map);
+                    flightPath.setMap(map);
+                    routeObjs_s.push(flightPathShadow);
+                    routeObjs.push(flightPath);
+                    
+                    google.maps.event.addListener(flightPath, 'click', function (event) {
+                     // this.setOptions({zIndex:zz++});
+                        var thisId = this.routeId;
+
+                        routeObjs.forEach(function(obj,i){
+                            if(obj.routeId === thisId) {
+                                obj.setOptions({zIndex      :zz++,
+                                                strokeWeight: 8,
+                                                clicked     : true });
+                            } else {
+                                obj.setOptions({strokeWeight: 4,
+                                                clicked     : false});
+                                routeObjs_s[i].setOptions({strokeOpacity: 0});
+                            }
                         });
 
-                    flightPath.setMap(map);
-
-                    google.maps.event.addListener(flightPath, 'click', function (event) {
-                      this.setOptions({zIndex:zz++});
-                      console.log(this.routeName);
-                  });
+                        $('#routeName').text(this.routeName);
+                    });
 
                     google.maps.event.addListener(flightPath, 'mouseover', function (event) {
-                      this.setOptions({strokeWeight:8});
-                      flightPathShadow.setOptions({strokeOpacity: 0.2});
-                  }); 
+                        if(!this.clicked){
+                            this.setOptions({strokeWeight:8});
+                            flightPathShadow.setOptions({strokeOpacity: 0.2});
+                        }
+                    }); 
 
                     google.maps.event.addListener(flightPath, 'mouseout', function (event) {
-                      this.setOptions({strokeWeight:4});
-                      flightPathShadow.setOptions({strokeOpacity: 0});
-                  });  
+                        if(!this.clicked){
+                            this.setOptions({strokeWeight:4});
+                            flightPathShadow.setOptions({strokeOpacity: 0});
+                        }
+                    });  
                 });
             });
 
