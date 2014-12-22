@@ -1,6 +1,7 @@
  <!DOCTYPE html>
 <html>
 <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
 	<title>my gMap</title>
 	<script src="https://code.jquery.com/jquery-1.11.1.js"></script>
 	<script src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
@@ -14,8 +15,10 @@
 	</style>
 </head>
 <body>
-	<div id="container" style="block-inline"></div>
-	<div id="map-canvas"></div>
+	<div id="container">
+	
+<div id="map-canvas"  style="width: 100%; height: 100%; position: absolute;"></div>
+</div>
         <div>StopName:<sapn id="stopName"></span></div>
         <div>RouteName:<sapn id="routeName"></span></div>
 </body>
