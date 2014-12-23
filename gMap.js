@@ -50,18 +50,29 @@ function initialize() {
 google.maps.event.addDomListener(window, "load", initialize);
 var stopName = getParameterByName('name');
 $('#stopName').text(stopName);
+var routesList = [];
+       var busids=[];
+       
+       var busRoutes = [];
 function moveMarker( map) {
 
         //delayed so you can see it move
         
        // marker.setPosition( new google.maps.LatLng( 24, 122 ) );
        // map.panTo( new google.maps.LatLng( 24, 122 ) );
-       var busids=[];
-       var routesList = [];
 
-       var myurl = "proxy.php?url=http://pda.5284.com.tw/MQS/businfo4.jsp?SLID=";
-       var count = 0;
-       $.get('./bus-stop.php', {'name':stopName}, function(data) {
+      // var myurl = "proxy.php?url=http://pda.5284.com.tw/MQS/businfo4.jsp?SLID=";
+var myurl = "./proxy.php?url=http://pda.5284.com.tw/MQS/businfo4.jsp";      
+ var count = 0;
+       var jsonString = JSON.stringify([stopName]);
+console.log(jsonString);
+  $.ajax({
+    type:"POST",
+    url:'./bus-stop.php',
+    data:{name:jsonString},
+    cache:true
+  })
+  .done(function(data) {
 
             data.forEach(function(item){
 
@@ -82,16 +93,19 @@ function moveMarker( map) {
             console.log(busids);
 
             busids.forEach(function(id){
-                getRoutes(myurl+id);
+                getRoutes(myurl+"?SLID="+id, plotRoutes);
             });
         });
 
-    var busRoutes = [];
 
-function getRoutes(url){
+
+function getRoutes(url,callback){
      console.log(url);
 
-     $.ajax(url).done(function(data){
+     $.ajax({
+type:"GET",
+url:url
+ }).done(function(data){
 
         var $tr = $(data).find('tr.ttego1, tr.ttego2');
 
@@ -106,10 +120,45 @@ function getRoutes(url){
         count++;
         if(count === busids.length){
             console.log('getRoutes:'+ count);
-            plotRoutes(routesList);
+            callback(routesList);
+routesList = [];
         }
     });
 }
+
+function displayRoutes(routeList){
+    console.log(routeList);
+var jsonString = JSON.stringify(routeList);
+
+console.log(jsonString);
+//routeList.forEach(function(val,key){
+
+     $.ajax({
+         type:'POST',
+         url :'./bus-stop.php', 
+         data:{name:jsonString},
+         cache:true
+      })
+      .done( function(data) {
+
+            data.forEach(function(item){
+
+                var position = new google.maps.LatLng( 
+                    item.geometry.coordinates[1], 
+                    item.geometry.coordinates[0]
+                    ),
+                marker = new google.maps.Marker({
+                    position: position,
+                    map: map,
+                    title: item.properties.bsm_chines
+                });
+                busids.push(item.properties.bsm_bussto);
+            });
+
+        });
+ //});
+}
+
 
 
 function plotRoutes (routesList){
@@ -174,6 +223,29 @@ var routeObjs_s = [];
                         });
 
                         $('#routeName').text(this.routeName);
+
+
+//get this Line's stops;
+//var myurl = "proxy.php?url=http://pda.5284.com.tw/MQS/businfo2.jsp?routename=";
+var myurl = "./proxy.php?url=http://pda.5284.com.tw/MQS/businfo2.jsp";
+var targetStops = [];
+busroutes = [];
+count = [];
+busids = [this.routeName];
+  getRoutes(myurl+"?routename="+this.routeName, displayRoutes);
+                    
+
+
+
+
+
+
+
+
+
+
+
+
                     });
 
                     google.maps.event.addListener(flightPath, 'mouseover', function (event) {
