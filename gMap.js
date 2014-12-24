@@ -20,7 +20,8 @@ function getParameterByName(name) {
 
 function getRandomColor() {
     var letters = '0123456789ABCDEF'.split('');
-    var color = '#';
+    //var color = '#';
+    var color = '';
     for (var i = 0; i < 6; i++ ) {
         color += letters[Math.floor(Math.random() * 16)];
     }
@@ -34,6 +35,7 @@ $(document).ready(function(){
     var routesList   = [],
         busids       = [],
         busRoutes    = [],
+        markerList   = [],
         stopid2line  = "./proxy.php?url=http://pda.5284.com.tw/MQS/businfo4.jsp?SLID=",
         line2stopUrl = "./proxy.php?url=http://pda.5284.com.tw/MQS/businfo2.jsp?routename=";     
         count        = 0;
@@ -127,6 +129,17 @@ $(document).ready(function(){
              cache:true
         })
         .done( function(data) {
+            markerList.forEach(function(marker){
+                marker.setVisible(false);
+            });
+
+
+            var pinColor = getRandomColor();
+            var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + pinColor,
+                new google.maps.Size(21, 34),
+                new google.maps.Point(0,0),
+                new google.maps.Point(10, 34));
+
             data.forEach(function(item){
                 var position = new google.maps.LatLng( 
                         item.geometry.coordinates[1], 
@@ -135,8 +148,10 @@ $(document).ready(function(){
                     marker = new google.maps.Marker({
                         position: position,
                         map: map,
+                        icon: pinImage,
                         title: item.properties.bsm_chines
                     });
+                markerList.push(marker);
                 busids.push(item.properties.bsm_bussto);
             });
         });
@@ -173,7 +188,7 @@ $(document).ready(function(){
                 var flightPath = new google.maps.Polyline({
                     path: flightPlanCoordinates,
                     geodesic: true,
-                        strokeColor: getRandomColor(), //#FF0000
+                        strokeColor: '#'+getRandomColor(), //#FF0000
                         strokeOpacity: 1.0,
                         strokeWeight: 4,
                         routeName: item.properties.bad_chines,
