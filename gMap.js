@@ -35,7 +35,7 @@ $(document).ready(function(){
     var routesList   = [],
         busids       = [],
         busRoutes    = [],
-        markerList   = [],
+        markerList   = {},
         stopid2line  = "./proxy.php?url=http://pda.5284.com.tw/MQS/businfo4.jsp?SLID=",
         line2stopUrl = "./proxy.php?url=http://pda.5284.com.tw/MQS/businfo2.jsp?routename=";     
         count        = 0;
@@ -86,15 +86,16 @@ $(document).ready(function(){
         })
         .done(function(){
             busids.forEach(function(id){
-                getRoutes(stopid2line+id, plotRoutes, map);
+                getRoutes(stopid2line, id, plotRoutes, map);
             });
         });
     }
 
-    function getRoutes (url,callback,map){
+    function getRoutes (url, para, callback, map){
+        var myUrl = url + para;
         $.ajax({
             type:"GET",
-            url:url
+            url:myUrl
         })
         .done(function(data){
 
@@ -105,6 +106,7 @@ $(document).ready(function(){
 
                 if (routesList.indexOf(routeName)<0){
                     routesList.push(routeName);
+                    markerList['_'+routeName] = [];
                 }
             });
         })
@@ -112,13 +114,13 @@ $(document).ready(function(){
             count++;
             if(count === busids.length){
                 console.log('getRoutes:'+ count);
-                callback(routesList, map);
+                callback(routesList, para ,map);
                 routesList = [];
             }
         });
     }
 
-    function displayRoutes (routeList, map){
+    function displayRoutes (routeList, para, map){
 
         var jsonString = JSON.stringify(routeList);
 
@@ -129,9 +131,17 @@ $(document).ready(function(){
              cache:true
         })
         .done( function(data) {
-            markerList.forEach(function(marker){
-                marker.setVisible(false);
-            });
+       //     markerList[para].forEach(function(marker){
+       //         marker.setVisible(false);
+       //     });
+        for(var key in markerList){
+                                              
+                            
+                               markerList[key].forEach(function(marker){
+                                   marker.setVisible(false);
+                               });
+        }
+
 
 
             var pinColor = getRandomColor();
@@ -151,13 +161,13 @@ $(document).ready(function(){
                         icon: pinImage,
                         title: item.properties.bsm_chines
                     });
-                markerList.push(marker);
+                markerList['_'+para].push(marker);
                 busids.push(item.properties.bsm_bussto);
             });
         });
     }
 
-    function plotRoutes (routesList, map){
+    function plotRoutes (routesList, para, map){
         console.log('plotList:'+ routesList);
         var jsonString = JSON.stringify(routesList);
 
@@ -220,12 +230,21 @@ $(document).ready(function(){
 
 
                     //get this Line's stops;
-                    
-                    var targetStops = [];
-                    busroutes = [];
-                    count = [];
-                    busids = [this.routeName];
-                    getRoutes(line2stopUrl+this.routeName, displayRoutes, map);
+                    if( markerList['_' + this.routeName].length === 0){
+                        var targetStops = [];
+                        busroutes = [];
+                        count = [];
+                        busids = [this.routeName];
+                        getRoutes(line2stopUrl,this.routeName, displayRoutes, map);
+                    } else {
+                        for(var key in markerList){
+                            var myBool = (key === ('_' + this.routeName)) ? true : false;                             
+                            
+                               markerList[key].forEach(function(marker){
+                                   marker.setVisible(myBool);
+                               });
+                        }
+                    }
                 });
 
                 google.maps.event.addListener(flightPath, 'mouseover', function (event) {
