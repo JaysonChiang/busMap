@@ -33,9 +33,10 @@ $(document).ready(function(){
     detectBrowser();
 
     var routesList   = [],
-        busids       = [],
-        busRoutes    = [],
-        markerList   = {},
+        linkList = [], //-----------------------------------------------------
+        busLineIdList       = [],
+      //  busRoutes    = [],
+        markerDict   = {},
         stopid2line  = "./proxy.php?url=http://pda.5284.com.tw/MQS/businfo4.jsp?SLID=",
         line2stopUrl = "./proxy.php?url=http://pda.5284.com.tw/MQS/businfo2.jsp?routename=";     
         count        = 0;
@@ -81,17 +82,17 @@ $(document).ready(function(){
                         title: item.properties.bsm_chines
                     });
 
-                busids.push(item.properties.bsm_bussto);
+                busLineIdList.push(item.properties.bsm_bussto);
             });
         })
         .done(function(){
-            busids.forEach(function(id){
-                getRoutes(stopid2line, id, plotRoutes, map);
+            busLineIdList.forEach(function( id ){
+                getRoutes(stopid2line, id, map, plotRoutes);
             });
         });
     }
 
-    function getRoutes (url, para, callback, map){
+    function getRoutes (url, para, map, callback){
         var myUrl = url + para;
         $.ajax({
             type:"GET",
@@ -101,19 +102,44 @@ $(document).ready(function(){
 
             var $tr = $(data).find('tr.ttego1, tr.ttego2');
 
-            $.each($tr,function(index,val){
-                var routeName = $(val).find('td:first-child').text();
-
-                if (routesList.indexOf(routeName)<0){
+            $.each($tr,function(index, val){
+                var routeName = $(val).find('td:first-child a').text();
+                var linkName = $(val).find('td:first-child a').attr('href'); 
+                if (routesList.indexOf(routeName) < 0){
                     routesList.push(routeName);
-                    markerList['_'+routeName] = [];
+                    linkList.push(linkName);
+                    markerDict['_'+routeName] = [];
                 }
             });
         })
         .done(function(){
             count++;
-            if(count === busids.length){
+            if(count === busLineIdList.length){
                 console.log('getRoutes:'+ count);
+                //-----------------------------
+                // plot only one side bus Stop
+                //-----------------------------
+                var jsonString = JSON.stringify(linkList);
+               $.ajax({
+                  type:"POST",
+                  url:"./bus-getStopId.php",
+                  data:{list:jsonString}
+               })
+                .done(function(oneStopList){
+                    console.log('this sotp is:'+ oneStopList);
+                    if($(routeName).text().length>0){
+                        var nowArray = markerDict['_' + $(routeName).text()];
+                        if(nowArray.length > 0){
+                            nowArray.forEach(function(marker){
+                                var markerId = marker._id + "";
+                                if(oneStopList.indexOf(markerId)<0){
+                                    marker.setMap(null);
+                                } 
+                            });
+                        }
+                    }
+                });
+              
                 callback(routesList, para ,map);
                 routesList = [];
             }
@@ -131,18 +157,12 @@ $(document).ready(function(){
              cache:true
         })
         .done( function(data) {
-       //     markerList[para].forEach(function(marker){
-       //         marker.setVisible(false);
-       //     });
-        for(var key in markerList){
-                                              
-                            
-                               markerList[key].forEach(function(marker){
-                                   marker.setVisible(false);
-                               });
-        }
 
-
+            for(var key in markerDict){
+               markerDict[key].forEach(function(marker){
+                   marker.setVisible(false);
+               });
+            }
 
             var pinColor = getRandomColor();
             var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + pinColor,
@@ -159,10 +179,11 @@ $(document).ready(function(){
                         position: position,
                         map: map,
                         icon: pinImage,
-                        title: item.properties.bsm_chines
+                        title: item.properties.bsm_chines,
+                        _id:item.properties.bsm_bussto
                     });
-                markerList['_'+para].push(marker);
-                busids.push(item.properties.bsm_bussto);
+                markerDict['_'+para].push(marker);
+                busLineIdList.push(item.properties.bsm_bussto);
             });
         });
     }
@@ -211,7 +232,7 @@ $(document).ready(function(){
                 routeObjs.push(flightPath);
                 
                 google.maps.event.addListener(flightPath, 'click', function (event) {
-                 // this.setOptions({zIndex:zz++});
+
                     var thisId = this.routeId;
 
                     routeObjs.forEach(function(obj,i){
@@ -228,21 +249,18 @@ $(document).ready(function(){
 
                     $('#routeName').text(this.routeName);
 
-
                     //get this Line's stops;
-                    if( markerList['_' + this.routeName].length === 0){
-                        var targetStops = [];
-                        busroutes = [];
-                        count = [];
-                        busids = [this.routeName];
-                        getRoutes(line2stopUrl,this.routeName, displayRoutes, map);
+                    if( markerDict['_' + this.routeName].length === 0 ){
+                        count   = 0;
+                        linkList=[];
+                        busLineIdList  = [this.routeName];
+                        getRoutes(line2stopUrl, this.routeName, map, displayRoutes);
                     } else {
-                        for(var key in markerList){
-                            var myBool = (key === ('_' + this.routeName)) ? true : false;                             
-                            
-                               markerList[key].forEach(function(marker){
-                                   marker.setVisible(myBool);
-                               });
+                        for(var key in markerDict){  
+                            var thisRouteName = '_' + this.routeName;
+                            markerDict[key].forEach(function(marker){
+                                marker.setVisible(key === thisRouteName);
+                            });
                         }
                     }
                 });
@@ -265,4 +283,3 @@ $(document).ready(function(){
     }
 
 });
-
