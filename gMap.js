@@ -11,7 +11,7 @@ function detectBrowser() {
   }
 }
 
-function getParameterByName(name) {
+function getURLParam(name) {
     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
     var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
     results = regex.exec(location.search);
@@ -33,17 +33,20 @@ $(document).ready(function(){
     detectBrowser();
 
     var routesList   = [],
-        linkList = [], //-----------------------------------------------------
+        stopListGo   = [],
+        stopListBk   = [],
+        linkList   =[],
+        linkListGo = [],
+        linkListBk = [], //-----------------------------------------------------
         busLineIdList       = [],
       //  busRoutes    = [],
         markerDict   = {},
         stopid2line  = "./proxy.php?url=http://pda.5284.com.tw/MQS/businfo4.jsp?SLID=",
         line2stopUrl = "./proxy.php?url=http://pda.5284.com.tw/MQS/businfo2.jsp?routename=";     
-        count        = 0;
+        count        = 0,
+        stopName     = getURLParam('name');
 
-    var stopName = getParameterByName('name');
-    $('#stopName').text(stopName);
-
+//start setMap
     google.maps.event.addDomListener(window, "load", initialize);
 
     function initialize() {
@@ -55,11 +58,25 @@ $(document).ready(function(){
             };
         
         var map = new google.maps.Map( document.getElementById('map-canvas'), myOptions );
+//end setMap
 
-        mainBusStop( map );
+        $( ".target" ).change(function() {
+            var target = $(this).val();
+            stopName = target;
+            $('#stopName').text(stopName);
+            viewMap( map );
+        });
+
+        if( stopName === "" ){
+            return false;
+        }
+
+        $('#stopName').text(stopName);
+        viewMap( map );
+
     }
 
-    function mainBusStop (map) {
+    function viewMap (map) {
 
         var jsonString = JSON.stringify([stopName]);
   
@@ -87,12 +104,12 @@ $(document).ready(function(){
         })
         .done(function(){
             busLineIdList.forEach(function( id ){
-                getRoutes(stopid2line, id, map, plotRoutes);
+                getRoutes1(stopid2line, id, map, plotRoutes);
             });
         });
     }
 
-    function getRoutes (url, para, map, callback){
+    function getRoutes1 (url, para, map, callback){
         var myUrl = url + para;
         $.ajax({
             type:"GET",
@@ -104,10 +121,10 @@ $(document).ready(function(){
 
             $.each($tr,function(index, val){
                 var routeName = $(val).find('td:first-child a').text();
-                var linkName = $(val).find('td:first-child a').attr('href'); 
+                var linkURL = $(val).find('td:first-child a').attr('href'); 
                 if (routesList.indexOf(routeName) < 0){
                     routesList.push(routeName);
-                    linkList.push(linkName);
+                    linkList.push(linkURL);
                     markerDict['_'+routeName] = [];
                 }
             });
@@ -124,11 +141,65 @@ $(document).ready(function(){
                   type:"POST",
                   url:"./bus-getStopId.php",
                   data:{list:jsonString}
+               });
+              
+                callback(routesList, para ,map);
+                routesList = [];
+            }
+        });
+    }
+
+    function getRoutes2 (url, para, map, callback){
+        var myUrl = url + para;
+        $.ajax({
+            type:"GET",
+            url:myUrl
+        })
+        .done(function(data){
+
+            var $trgo = $(data).find('tr.ttego1, tr.ttego2');
+                $trbk = $(data).find('tr.tteback1, tr.tteback2');
+
+            $.each($trgo, function(index, val){
+                var routeName = $(val).find('td:first-child a').text();
+                var linkURL = $(val).find('td:first-child a').attr('href'); 
+                if (stopListGo.indexOf(routeName) < 0){
+                    stopListGo.push(routeName);
+                    linkListGo.push(linkURL);
+                //    markerDict['_'+routeName] = [];
+                }
+            });
+
+            $.each($trbk, function(index, val){
+                var routeName = $(val).find('td:first-child a').text();
+                var linkURL = $(val).find('td:first-child a').attr('href'); 
+                if (stopListBk.indexOf(routeName) < 0){
+                    stopListBk.push(routeName);
+                    linkListBk.push(linkURL);
+                //    markerDict['_'+routeName] = [];
+                }
+            });
+        })
+        .done(function(){
+            count++;
+            if(count === busLineIdList.length){
+                console.log('getRoutes:'+ count);
+                //-----------------------------
+                // plot only one side bus Stop
+                //-----------------------------
+                var jsonStringGo = JSON.stringify(linkListGo);
+                var jsonStringBk = JSON.stringify(linkListBk);
+               $.ajax({
+                  type:"POST",
+                  url:"./bus-getStopId.php",
+                  data:{list:jsonStringGo}
                })
                 .done(function(oneStopList){
                     console.log('this sotp is:'+ oneStopList);
-                    if($(routeName).text().length>0){
-                        var nowArray = markerDict['_' + $(routeName).text()];
+                    console.log('para:'+para);
+                    console.log('_para:_'+para);
+                    if(para.length>0){
+                        var nowArray = markerDict['_' + para];
                         if(nowArray.length > 0){
                             nowArray.forEach(function(marker){
                                 var markerId = marker._id + "";
@@ -140,15 +211,16 @@ $(document).ready(function(){
                     }
                 });
               
-                callback(routesList, para ,map);
-                routesList = [];
+                callback(stopListGo, para ,map);
+                stopListGo = [];
+                stopListBk = [];
             }
         });
     }
 
-    function displayRoutes (routeList, para, map){
+    function displayRoutes (stopList, para, map){
 
-        var jsonString = JSON.stringify(routeList);
+        var jsonString = JSON.stringify(stopList);
 
         $.ajax({
              type:'POST',
@@ -182,7 +254,7 @@ $(document).ready(function(){
                         title: item.properties.bsm_chines,
                         _id:item.properties.bsm_bussto
                     });
-                markerDict['_'+para].push(marker);
+                markerDict['_' + para].push(marker);
                 busLineIdList.push(item.properties.bsm_bussto);
             });
         });
@@ -252,9 +324,10 @@ $(document).ready(function(){
                     //get this Line's stops;
                     if( markerDict['_' + this.routeName].length === 0 ){
                         count   = 0;
-                        linkList=[];
+                        linkListGo = [];
+                        linkListBk = [];
                         busLineIdList  = [this.routeName];
-                        getRoutes(line2stopUrl, this.routeName, map, displayRoutes);
+                        getRoutes2(line2stopUrl, this.routeName, map, displayRoutes);
                     } else {
                         for(var key in markerDict){  
                             var thisRouteName = '_' + this.routeName;
@@ -283,3 +356,4 @@ $(document).ready(function(){
     }
 
 });
+
