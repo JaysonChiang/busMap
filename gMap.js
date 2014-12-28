@@ -189,26 +189,34 @@ $(document).ready(function(){
                 //-----------------------------
                 var jsonStringGo = JSON.stringify(linkListGo);
                 var jsonStringBk = JSON.stringify(linkListBk);
-               $.ajax({
-                  type:"POST",
-                  url:"./bus-getStopId.php",
-                  data:{list:jsonStringGo}
-               })
-                .done(function(oneStopList){
-                    console.log('this sotp is:'+ oneStopList);
-                    console.log('para:'+para);
-                    console.log('_para:_'+para);
-                    if(para.length>0){
+                $.when(
+                   $.ajax({
+                      type:"POST",
+                      url:"./bus-getStopId.php",
+                      data:{list:jsonStringGo}
+                   }),
+                   $.ajax({
+                      type:"POST",
+                      url:"./bus-getStopId.php",
+                      data:{list:jsonStringBk}
+                   })
+               )
+               .done(function(goList, bkList){
+                    console.log('goStop is:'+ goList[0]);
+                    console.log('bkStop is:'+ bkList[0]);
+                    console.log('goLength:'+ goList[0].length + ', bkLength:'+ bkList[0].length);
+                    console.log('_para:_'+para+', para:'+ para);
+                //    if(para.length>0){
                         var nowArray = markerDict['_' + para];
                         if(nowArray.length > 0){
                             nowArray.forEach(function(marker){
                                 var markerId = marker._id + "";
-                                if(oneStopList.indexOf(markerId)<0){
+                                if(goList[0].indexOf(markerId)<0){
                                     marker.setMap(null);
                                 } 
                             });
                         }
-                    }
+                //    }
                 });
               
                 callback(stopListGo, para ,map);
@@ -254,7 +262,7 @@ $(document).ready(function(){
                         title: item.properties.bsm_chines,
                         _id:item.properties.bsm_bussto
                     });
-                markerDict['_' + para].push(marker);
+                (markerDict['_' + para]).push(marker);
                 busLineIdList.push(item.properties.bsm_bussto);
             });
         });
@@ -322,7 +330,7 @@ $(document).ready(function(){
                     $('#routeName').text(this.routeName);
 
                     //get this Line's stops;
-                    if( markerDict['_' + this.routeName].length === 0 ){
+                    if( (markerDict['_' + this.routeName]).length === 0 ){
                         count   = 0;
                         linkListGo = [];
                         linkListBk = [];
