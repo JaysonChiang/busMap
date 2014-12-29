@@ -44,10 +44,43 @@ $(document).ready(function(){
         stopid2line  = "./proxy.php?url=http://pda.5284.com.tw/MQS/businfo4.jsp?SLID=",
         line2stopUrl = "./proxy.php?url=http://pda.5284.com.tw/MQS/businfo2.jsp?routename=";     
         count        = 0,
-        stopName     = getURLParam('name');
+        stopName     = getURLParam('name'),
+        nowRouteName = "";
 
 //start setMap
     google.maps.event.addDomListener(window, "load", initialize);
+    
+    $('.busStop').on('click',function(){
+        whichWayClick(nowRouteName);
+    });
+
+    function whichWayClick(lineName){
+        var goState = $('#goWay').prop("checked");
+            bkState = $('#bkWay').prop("checked");
+            console.log('go:'+goState+', bk:'+bkState);
+        var thisRouteName = '_' + lineName;
+
+        for(var key in markerDict){ 
+
+            console.log('key:'+key+', thisRouteName:'+thisRouteName);
+            if(goState){
+                markerDict[key].go.forEach(function(marker){
+                    marker.setVisible(key === thisRouteName);
+                });
+                markerDict[key].bk.forEach(function(marker){
+                    marker.setVisible(false);
+                });
+            }
+            if(bkState){
+                markerDict[key].go.forEach(function(marker){
+                    marker.setVisible(false);
+                });
+                markerDict[key].bk.forEach(function(marker){
+                    marker.setVisible(key === thisRouteName);
+                });
+            }
+        }
+    }
 
     function initialize() {
 
@@ -125,7 +158,10 @@ $(document).ready(function(){
                 if (routesList.indexOf(routeName) < 0){
                     routesList.push(routeName);
                     linkList.push(linkURL);
-                    markerDict['_'+routeName] = [];
+                    markerDict['_'+routeName] = {};
+                    markerDict['_'+routeName].pre = [];
+                    markerDict['_'+routeName].go = [];
+                    markerDict['_'+routeName].bk = [];
                 }
             });
         })
@@ -207,14 +243,24 @@ $(document).ready(function(){
                     console.log('goLength:'+ goList[0].length + ', bkLength:'+ bkList[0].length);
                     console.log('_para:_'+para+', para:'+ para);
                 //    if(para.length>0){
-                        var nowArray = markerDict['_' + para];
+                        var nowArray = markerDict['_' + para].pre;
                         if(nowArray.length > 0){
                             nowArray.forEach(function(marker){
                                 var markerId = marker._id + "";
+                                if(goList[0].indexOf(markerId)>=0){
+                                   markerDict['_' + para].go.push(marker);
+                                }
+                                if(bkList[0].indexOf(markerId)>=0){
+                                   markerDict['_' + para].bk.push(marker);
+                                }
+                                /*
                                 if(goList[0].indexOf(markerId)<0){
-                                    marker.setMap(null);
+                                //    marker.setMap(null);
+                                    marker.setVisible(false);
                                 } 
+                                */
                             });
+                            whichWayClick(nowRouteName);
                         }
                 //    }
                 });
@@ -239,7 +285,13 @@ $(document).ready(function(){
         .done( function(data) {
 
             for(var key in markerDict){
-               markerDict[key].forEach(function(marker){
+               markerDict[key].go.forEach(function(marker){
+                   marker.setVisible(false);
+               });
+               markerDict[key].bk.forEach(function(marker){
+                   marker.setVisible(false);
+               });
+               markerDict[key].pre.forEach(function(marker){
                    marker.setVisible(false);
                });
             }
@@ -262,7 +314,7 @@ $(document).ready(function(){
                         title: item.properties.bsm_chines,
                         _id:item.properties.bsm_bussto
                     });
-                (markerDict['_' + para]).push(marker);
+                (markerDict['_' + para].pre).push(marker);
                 busLineIdList.push(item.properties.bsm_bussto);
             });
         });
@@ -314,6 +366,8 @@ $(document).ready(function(){
                 google.maps.event.addListener(flightPath, 'click', function (event) {
 
                     var thisId = this.routeId;
+                    $('#routeName').text(this.routeName);
+                    nowRouteName = this.routeName;
 
                     routeObjs.forEach(function(obj,i){
                         if(obj.routeId === thisId) {
@@ -327,22 +381,15 @@ $(document).ready(function(){
                         }
                     });
 
-                    $('#routeName').text(this.routeName);
-
                     //get this Line's stops;
-                    if( (markerDict['_' + this.routeName]).length === 0 ){
+                    if( (markerDict['_' + this.routeName]).pre.length === 0 ){
                         count   = 0;
                         linkListGo = [];
                         linkListBk = [];
                         busLineIdList  = [this.routeName];
                         getRoutes2(line2stopUrl, this.routeName, map, displayRoutes);
                     } else {
-                        for(var key in markerDict){  
-                            var thisRouteName = '_' + this.routeName;
-                            markerDict[key].forEach(function(marker){
-                                marker.setVisible(key === thisRouteName);
-                            });
-                        }
+                        whichWayClick(this.routeName);
                     }
                 });
 
