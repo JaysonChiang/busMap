@@ -1,19 +1,42 @@
+ <!DOCTYPE html>
 <html>
 <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
 	<title>my gMap</title>
-	<script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">	
+        <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
 	<script src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
 	<script type="text/javascript"  src="gMap.js"></script>
 	<style type="text/css">
-		#map-canvas 
-		{ 
-			height: 600px; 
-			width: 800px;
-		}
+	body {
+		margin: 1px;
+	}
 	</style>
 </head>
 <body>
-	<div id="map-canvas"></div>
-        <div id="temp"></div>
+	<div id="container">
+            <div >
+              <div >
+                <div id="map-canvas"  style="position: absolute"></div>
+	            </div>
+              <div  style="position: absolute">
+                <div>StopName:<sapn id="stopName"></span></div>
+
+                <div>RouteName:<sapn id="routeName"></span></div>
+                <select class="target">
+                    <option value="" selected="selected">Select</option>
+                    <option value="麗寶大樓">麗寶大樓</option>
+                    <option value="榮總一">榮總一</option>
+                    <option value="芝山公園">芝山公園</option>
+                    <option value="時報廣場">時報廣場</option>
+                    <option value="士林官邸(中正)">士林官邸(中正)</option>
+                    <option value="仁愛新生路口">仁愛新生路口</option>
+                    <option value="福林橋">福林橋</option>
+                </select><br/>
+                <input id="goWay" class ="busStop" type="radio" name="busStop" value="go" checked>GO<br/>
+                <input id="bkWay" class ="busStop" type="radio" name="busStop" value="bk">Back 
+              </div>            
+            </div>        
+        </div>
 </body>
 </html>
