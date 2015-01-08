@@ -65,20 +65,25 @@ var stopName = getParameterByName('name');
            // map.panTo( new google.maps.LatLng( 24, 122 ) );
 
        //     $.getJSON("./bus-stop.php", function( data ) {
+        var busids=[];
          $.get('./bus-stop.php', {'name':stopName}, function(data) {                
             data
                 .forEach(function(item){
             
                     var position = new google.maps.LatLng( 
-                        item.geometry.coordinates[1], 
-                        item.geometry.coordinates[0]
+                          item.geometry.coordinates[1], 
+                          item.geometry.coordinates[0]
                         ),
-                    marker = new google.maps.Marker({
-                        position: position,
-                        map: map,
-                        title: item.properties.bsm_chines
-                    });
+                        marker = new google.maps.Marker({
+                          position: position,
+                          map: map,
+                          title: item.properties.bsm_chines,
+                          stopid: item.properties.bsm_bussto
+                        });
+                    busids.push(item.properties.bsm_bussto);
                 });
+            }).done(function(){
+                console.log(busids);
             });
 
 // var station_SL = ["111","1717","206","255","255區","260","260區","303","303區",
